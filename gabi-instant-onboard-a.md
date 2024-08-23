@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     actor Agent
     box Purple Sales Call UIs
@@ -27,3 +28,4 @@ sequenceDiagram
     DCT->>DCT: Sales Agent and Customer Fill Out And Submit DCT
     DCT->>-Agent: 
     note right of Agent: Site Setup for Build
+```
