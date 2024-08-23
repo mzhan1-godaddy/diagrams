@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     box
         participant start
@@ -92,6 +93,4 @@ sequenceDiagram
     WOS->>PWS API: save merged result
     PWS API->>WOS: 
     WOS->>WOS: Continue Site Automation...
-    
-    
-    
+```
