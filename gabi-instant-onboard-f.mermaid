@@ -37,7 +37,7 @@ sequenceDiagram
     deactivate Agent
     note right of Jira: async event ADD_ACCOUNT sent to MSH lambda
     start->>Jira: Jira ticket created for website build
-    start->>Agent: 
+    start-->>Agent: 
     activate Agent
     Agent-->>DCT: Agent opens DCT
     note over Agent,DCT: Optional step
@@ -58,6 +58,17 @@ sequenceDiagram
     DCT-->>Agent:      
     Agent->>start: Agent and customer end the call
     deactivate Agent
+    start-->>Shopper: 
+    activate Shopper
+    Shopper-->>DCT: Shopper opens DCT
+    note over Shopper,DCT: Optional step
+    loop Customer edit DCT
+    DCT-->>PWS API: PUT /v3/design-consultation
+    PWS API-->>DCT: 
+    end
+    DCT-->>Shopper: 
+    Shopper-->>start: 
+    deactivate Shopper
     start-->>+Jira: Jira automation
     note over start, Jira: If DCT was not submitted (never opened or in progress)
     Jira-->>-Jira: Transition the ticket to Setup for Build after 24 hours after ticket creation
