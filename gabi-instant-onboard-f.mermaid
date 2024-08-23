@@ -14,9 +14,8 @@ sequenceDiagram
     end
     box rgb(0, 82, 204) Post-Purchase Jira Automation
         participant Jira
-
         end
-    box APIs
+    box Post-Purchase APIs
         participant Gateway
         participant PWS API
         participant WDO API
@@ -40,26 +39,28 @@ sequenceDiagram
     start->>Jira: Jira ticket created for website build
     start->>Agent: 
     activate Agent
-    Agent->>DCT: Agent opens DCT
+    Agent-->>DCT: Agent opens DCT
     note over Agent,DCT: Optional step
-    DCT->>GABI API: GET /v1/sales-call-info
-    GABI API->>DCT: 
-    DCT->>DCT: inject GABI lead data into DCT
-    DCT->>DCT: Agent clicks continue
-    DCT->>Jira: Add Jira label dct-ai-content
-    Jira->>DCT: 
+    DCT-->>GABI API: GET /v1/sales-call-info
+    GABI API-->>DCT: 
+    DCT-->>DCT: inject GABI lead data into DCT
+    DCT-->>DCT: Agent clicks continue
+    DCT-->>Jira: Add Jira label dct-ai-content
+    Jira-->>DCT: 
     loop Agent and Customer edit DCT
-    DCT->>PWS API: PUT /v3/design-consultation 
-    PWS API->>DCT: 
+    DCT-->>PWS API: PUT /v3/design-consultation 
+    PWS API-->>DCT: 
     end
-    DCT->>PWS API: Submit DCT form
-    PWS API->>Jira: Transition ticket to Setup for Build
-    Jira->>PWS API: 
-    PWS API->>DCT: 
-    DCT->>Agent:      
+    DCT-->>PWS API: Submit DCT form
+    PWS API-->>+Jira: Transition ticket to Setup for Build
+    Jira-->>-PWS API: 
+    PWS API-->>DCT: 
+    DCT-->>Agent:      
     Agent->>start: Agent and customer end the call
     deactivate Agent
-    Jira->>Jira: Jira automation to transition ticket to Setup for Build when label gabi-lead is present
+    start-->>+Jira: Jira automation
+    note over start, Jira: If DCT was not submitted (never opened or in progress)
+    Jira-->>-Jira: Transition the ticket to Setup for Build after 24 hours after ticket creation
     Jira->>Gateway: Setup for Build status transition webhook
     Gateway->>Jira: 
     Gateway->>Chatterbox: Send AUTOMATE_CONTENT_GENERATION event
