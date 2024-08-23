@@ -2,38 +2,63 @@ sequenceDiagram
     box
         participant start
         participant Agent
+        participant Shopper
     end
     box rgb(27, 119, 219) Pre-Purchase
         participant GABI UI
         participant Purchase App
         participant GABI API
     end
-    box rgb(249, 96, 64 ) Post-Purchase MSH Automation
-        participant website-builds-event-processor
+    box green Post-Purchase DCT
+        participant DCT
     end
     box rgb(0, 82, 204) Post-Purchase Jira Automation
         participant Jira
-        participant Gateway
+
         end
-    box Purple Post-Purchase WOS Automation
-        participant Chatterbox
-        participant WOS
+    box APIs
+        participant Gateway
         participant PWS API
         participant WDO API
     end
+    box Purple Post-Purchase WOS Automation
+        participant Chatterbox
+        participant WOS
+    end
     
-    start->>+Agent:  
+    start->>Agent: Agent and customer enter a call
+    activate Agent
     Agent ->>+ GABI UI: Agent Opens GABI UI from CRM
     GABI UI ->>+ GABI API: Agent submits DIFY lead data
     GABI API->GABI UI:  
-    GABI UI->>-Agent: 
+    GABI UI->>Agent: 
     Agent->>Purchase App: Agent Completes Purchase of WDS product
     Purchase App->>Agent: 
-    Agent->>-start: 
-    note right of start: ecomm system sends ADD_ACCOUNT event async
-    start->>website-builds-event-processor: ADD_ACCOUNT Event from purchase
-    website-builds-event-processor->>Jira: add label gabi-lead IFF lead data exists
-    Jira->>website-builds-event-processor: 
+    Agent->>start: 
+    deactivate Agent
+    note right of Jira: async event ADD_ACCOUNT sent to MSH lambda
+    start->>Jira: Jira ticket created for website build
+    start->>Agent: 
+    activate Agent
+    Agent->>DCT: Agent opens DCT
+    note over Agent,DCT: Optional step
+    DCT->>GABI API: GET /v1/sales-call-info
+    GABI API->>DCT: 
+    DCT->>DCT: inject GABI lead data into DCT
+    DCT->>DCT: Agent clicks continue
+    DCT->>Jira: Add Jira label dct-ai-content
+    Jira->>DCT: 
+    loop Agent and Customer edit DCT
+    DCT->>PWS API: PUT /v3/design-consultation 
+    PWS API->>DCT: 
+    end
+    DCT->>PWS API: Submit DCT form
+    PWS API->>Jira: Transition ticket to Setup for Build
+    Jira->>PWS API: 
+    PWS API->>DCT: 
+    DCT->>Agent:      
+    Agent->>start: Agent and customer end the call
+    deactivate Agent
     Jira->>Jira: Jira automation to transition ticket to Setup for Build when label gabi-lead is present
     Jira->>Gateway: Setup for Build status transition webhook
     Gateway->>Jira: 
