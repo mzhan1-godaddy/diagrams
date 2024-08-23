@@ -1,0 +1,56 @@
+sequenceDiagram
+    box
+        participant start
+        participant Agent
+    end
+    box rgb(27, 119, 219) Pre-Purchase
+        participant GABI UI
+        participant Purchase App
+        participant GABI API
+    end
+    box rgb(249, 96, 64 ) Post-Purchase MSH Automation
+        participant website-builds-event-processor
+    end
+    box rgb(0, 82, 204) Post-Purchase Jira Automation
+        participant Jira
+        participant Gateway
+        end
+    box Purple Post-Purchase WOS Automation
+        participant Chatterbox
+        participant WOS
+        participant PWS API
+        participant WDO API
+    end
+    
+    start->>+Agent:  
+    Agent ->>+ GABI UI: Agent Opens GABI UI from CRM
+    GABI UI ->>+ GABI API: Agent submits DIFY lead data
+    GABI API->GABI UI:  
+    GABI UI->>-Agent: 
+    Agent->>Purchase App: Agent Completes Purchase of WDS product
+    Purchase App->>Agent: 
+    Agent->>-start: 
+    note right of start: ecomm system sends ADD_ACCOUNT event async
+    start->>website-builds-event-processor: ADD_ACCOUNT Event from purchase
+    website-builds-event-processor->>Jira: add label gabi-lead IFF lead data exists
+    Jira->>website-builds-event-processor: 
+    Jira->>Jira: Jira automation to transition ticket to Setup for Build when label gabi-lead is present
+    Jira->>Gateway: Setup for Build status transition webhook
+    Gateway->>Jira: 
+    Gateway->>Chatterbox: Send AUTOMATE_CONTENT_GENERATION event
+    Chatterbox->>Gateway: 
+    Chatterbox->>WOS: Process AUTOMATE_CONTENT_GENERATION event
+    WOS->>PWS API: GET /v3/design-consultation
+    PWS API->>WOS: 
+    WOS->>WDO API: POST /v1/validate-business-profile with business profile data
+    WDO API->>WOS: 
+    WOS-->>WOS: if business profile is complete, skip to next step
+    WOS->>WDO API: if business profile is incomplete, POST /v1/instant-onboard
+    WDO API->>WOS: 
+    WOS->>WOS: merge result of /v3/design-consultation and /v1/instant-onboard
+    WOS->>PWS API: save merged result
+    PWS API->>WOS: 
+    WOS->>WOS: Continue Site Automation...
+    
+    
+    
