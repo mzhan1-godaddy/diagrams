@@ -18,6 +18,7 @@ sequenceDiagram
         end
     box Post-Purchase APIs
         participant Gateway
+        participant CAAS API
         participant PWS API
         participant WDO API
     end
@@ -36,8 +37,14 @@ sequenceDiagram
     Purchase App->>Agent: 
     Agent->>start: 
     deactivate Agent
-    note right of Jira: async event ADD_ACCOUNT sent to MSH lambda
-    start->>Jira: Jira ticket created for website build
+    start->>Jira: async Ecomm event and MSH lambda creates Jira ticket for website build
+    start->>Chatterbox: async Ecomm ADD_ACCOUNT event sent to Chatterbox
+    Chatterbox->>WOS: Process ADD_ACCOUNT event
+    activate WOS
+    WOS->>WOS: Send welcome email
+    WOS->>WOS: enqueue new workflow dify-ai-content-fallback
+    WOS->>WOS: dify-ai-content-fallback waits for 24 hours after purchase...
+    deactivate WOS
     opt Optionally visit DCT
     start-->>Agent: 
     activate Agent
@@ -74,23 +81,25 @@ sequenceDiagram
     Shopper-->>start: 
     deactivate Shopper 
     end
-    start-->>+Jira: Jira automation
-    note over start, Jira: If DCT was not submitted (never opened or in progress)
-    Jira-->>-Jira: Transition the ticket to Setup for Build after 24 hours after ticket creation
-    Jira->>Gateway: Setup for Build status transition webhook
-    Gateway->>Jira: 
-    Gateway->>Chatterbox: Send AUTOMATE_CONTENT_GENERATION event
-    Chatterbox->>Gateway: 
-    Chatterbox->>WOS: Process AUTOMATE_CONTENT_GENERATION event
-    WOS->>PWS API: GET /v3/design-consultation
-    PWS API->>WOS: 
-    WOS->>WDO API: POST /v1/validate-business-profile with business profile data
-    WDO API->>WOS: 
-    WOS-->>WOS: if business profile is complete, skip to next step
-    WOS->>WDO API: if business profile is incomplete, POST /v1/instant-onboard
-    WDO API->>WOS: 
-    WOS->>WOS: merge result of /v3/design-consultation and /v1/instant-onboard
-    WOS->>PWS API: save merged result
-    PWS API->>WOS: 
-    WOS->>WOS: Continue Site Automation...
+    start-->>WOS: 24 hours passes
+    activate WOS
+    WOS-->>Jira: fetch Jira ticket details
+    Jira-->>WOS:  
+    WOS-->>WOS: skip to end if Jira ticket labels contain at least one of the following: [qualifier-ai-content, dct-ai-content], skip to end if Jira ticket resolution is empty
+    WOS-->>+WDO API: POST /v1/instant-onboard
+    WDO API-->>PWS API: GET /v2/design-consultation
+    PWS API-->>WDO API: 
+    WDO API-->>WDO API: validate if business profile is complete
+    WDO API-->>WDO API: if incomplete prepare input args to suggestions
+    WDO API-->>GABI API: get lead data
+    GABI API-->>WDO API: 
+    WDO API-->>CAAS API: get suggestions data
+    CAAS API-->>WDO API: 
+    WDO API-->>PWS API: save merged data with PUT /v2/design-consultation
+    PWS API-->>WDO API: 
+    WDO API-->>-WOS: 
+    WOS-->>WOS: check instant-onboard response.valid, if true continue. If false, mark workflow execution as a failure and stop execution
+    WOS-->>Jira: Add Jira label qualifier-ai-content
+    Jira-->>WOS: 
+    deactivate WOS
 ```
