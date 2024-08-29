@@ -1,21 +1,19 @@
 ```mermaid
 sequenceDiagram
     actor Agent
-    box Purple Sales Call UIs
+    box rgb(27, 119, 219) Pre-Purchase Sales Call UIs
         participant GABI UI
         participant Purchase App
     end
-    box Blue API
+    box green API
         participant GABI API
         participant WDO API
     end
-    box Green Post Sale UIs
+    box rgb(0, 82, 204) Post Sale UIs
         participant DCT
     end
     Agent ->>+ GABI UI: Agent Opens GABI UI from CRM
     GABI UI ->>+ GABI API: Agent submits DIFY lead data
-    GABI API ->> Chatterbox: Send ChatterBox Event DIFY_QUALIFIER_FORM_SUBMITTED with lead data payload
-    Chatterbox ->> GABI API: 
     GABI API->GABI UI:  
     GABI UI->>-Agent: 
     Agent->>Purchase App: Agent Completes Purchase of WDS product
@@ -25,7 +23,7 @@ sequenceDiagram
     WDO API->>GABI API: GET/v1/leads
     GABI API->>WDO API: 
     WDO API->>DCT: 
-    DCT->>DCT: Sales Agent and Customer Fill Out And Submit DCT
+    DCT->>DCT: Sales Agent and Customer Submit DCT
     DCT->>-Agent: 
     note right of Agent: Site Setup for Build
 ```
